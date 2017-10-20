@@ -31,6 +31,8 @@ export default class App extends Component {
     animated: new Animated.Value(0)
   };
 
+  animated = new Animated.Value(0);
+
   position = {
     start: null,
     end: null
@@ -113,12 +115,14 @@ export default class App extends Component {
   };
 
   handleProgressPress = evt => {
+    this.triggerShowHide();
     const position = e.nativeEvent.locationX;
     const progress = position / PROGRESSBARLENGTH * this.state.duration;
     this.player.seek(progress);
   };
 
   handleMainButtonTouch = () => {
+    this.triggerShowHide();
     if (this.state.progress >= 1) {
       this.player.seek(0);
     }
@@ -127,6 +131,25 @@ export default class App extends Component {
         paused: !state.paused
       };
     });
+  };
+
+  handleVideoPress = () => {
+    this.triggerShowHide();
+  };
+
+  triggerShowHide = () => {
+    clearTimeout(this.hideTimeout);
+    Animated.timing(this.animated, {
+      toValue: 1,
+      duration: 100
+    }).start();
+
+    this.hideTimeout = setTimeout(() => {
+      Animated.timing(this.animated, {
+        toValue: 0,
+        duration: 300
+      }).start();
+    }, 1500);
   };
 
   render() {
@@ -141,26 +164,35 @@ export default class App extends Component {
       transform: [{ rotate: interpolatedAnimation }]
     };
 
+    const interpolatedControls = this.animated.interpolate({
+      inputRange: [0, 1],
+      outputRange: [48, 0]
+    });
+    const controlHideStyle = {
+      transform: [{ translateY: interpolatedControls }]
+    };
+
     return (
       <View style={styles.container}>
-        <ScrollView scrollEventThrottle={16} onScroll={this.handleScroll}>
-          <View style={styles.fakeContent} />
+        <View style={styles.videoContainer}>
           <View style={error ? sytles.error : undefined}>
-            <Video
-              style={StyleSheet.absoluteFill}
-              source={{ uri: "http://google.com/notavideo" }}
-              resizeMode="contain"
-              onError={this.handleError}
-              onLoadStart={this.handleLoadStart}
-              onBuffer={this.handleBuffer}
-              repeat
-              paused={this.state.paused}
-              onLayout={this.handleVideoLayout}
-              onLoad={this.handleLoad}
-              onProgress={this.handleProgress}
-              onEnd={this.handleEnd}
-              ref={ref => (this.player = ref)}
-            />
+            <TouchableWithoutFeedback onPress={this.handleVideoPress}>
+              <Video
+                style={StyleSheet.absoluteFill}
+                source={{ uri: "http://google.com/notavideo" }}
+                resizeMode="contain"
+                onError={this.handleError}
+                onLoadStart={this.handleLoadStart}
+                onBuffer={this.handleBuffer}
+                repeat
+                paused={this.state.paused}
+                onLayout={this.handleVideoLayout}
+                onLoad={this.handleLoad}
+                onProgress={this.handleProgress}
+                onEnd={this.handleEnd}
+                ref={ref => (this.player = ref)}
+              />
+            </TouchableWithoutFeedback>
             <View style={styles.videoCover}>
               {error && (
                 <Icon name="exclamation-triangle" size={30} color="red" />
@@ -181,7 +213,7 @@ export default class App extends Component {
                 style={styles.input}
               />
             </View>
-            <View style={styles.controls}>
+            <Animated.View style={[styles.controls, controlHideStyle]}>
               <TouchableWithoutFeedback onPress={this.handleMainButtonTouch}>
                 <Icon
                   name={!this.state.paused ? "pause" : "play"}
@@ -206,10 +238,9 @@ export default class App extends Component {
                   Math.floor(this.state.progress * this.state.duration)
                 )}
               </Text>
-            </View>
+            </Animated.View>
           </View>
-          <View style={styles.fakeContent} />
-        </ScrollView>
+        </View>
       </View>
     );
   }
@@ -219,6 +250,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 250
+  },
+  videoContainer: {
+    overflow: "hidden"
   },
   header: {
     fontSize: 30,
