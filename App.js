@@ -7,6 +7,7 @@ import {
   AppRegistry,
   ScrollView,
   TouchableWithoutFeedback,
+  PanResponder,
   Dimensions,
   TextInput
 } from "react-native";
@@ -33,6 +34,15 @@ export default class App extends Component {
 
   animated = new Animated.Value(0);
 
+  componentWillMount() {
+    this.panResponder = PanResponder.create({
+      onMoveShouldSetPanResponderCapture: () => {
+        this.triggerShowHide();
+        return false;
+      }
+    });
+  }
+
   position = {
     start: null,
     end: null
@@ -52,9 +62,7 @@ export default class App extends Component {
     });
   };
 
-  handleLoadStart = () => {
-    this.triggerBufferAnimation();
-  };
+  handleLoadStart = () => {};
 
   triggerBufferAnimation = () => {
     this.loopingAnimation = Animated.loop(
@@ -115,14 +123,12 @@ export default class App extends Component {
   };
 
   handleProgressPress = evt => {
-    this.triggerShowHide();
     const position = e.nativeEvent.locationX;
     const progress = position / PROGRESSBARLENGTH * this.state.duration;
     this.player.seek(progress);
   };
 
   handleMainButtonTouch = () => {
-    this.triggerShowHide();
     if (this.state.progress >= 1) {
       this.player.seek(0);
     }
@@ -133,9 +139,7 @@ export default class App extends Component {
     });
   };
 
-  handleVideoPress = () => {
-    this.triggerShowHide();
-  };
+  handleVideoPress = () => {};
 
   triggerShowHide = () => {
     clearTimeout(this.hideTimeout);
@@ -174,25 +178,23 @@ export default class App extends Component {
 
     return (
       <View style={styles.container}>
-        <View style={styles.videoContainer}>
+        <View style={styles.videoContainer} {...this.panResponder.panHandlers}>
           <View style={error ? sytles.error : undefined}>
-            <TouchableWithoutFeedback onPress={this.handleVideoPress}>
-              <Video
-                style={StyleSheet.absoluteFill}
-                source={{ uri: "http://google.com/notavideo" }}
-                resizeMode="contain"
-                onError={this.handleError}
-                onLoadStart={this.handleLoadStart}
-                onBuffer={this.handleBuffer}
-                repeat
-                paused={this.state.paused}
-                onLayout={this.handleVideoLayout}
-                onLoad={this.handleLoad}
-                onProgress={this.handleProgress}
-                onEnd={this.handleEnd}
-                ref={ref => (this.player = ref)}
-              />
-            </TouchableWithoutFeedback>
+            <Video
+              style={StyleSheet.absoluteFill}
+              source={{ uri: "http://google.com/notavideo" }}
+              resizeMode="contain"
+              onError={this.handleError}
+              onLoadStart={this.handleLoadStart}
+              onBuffer={this.handleBuffer}
+              repeat
+              paused={this.state.paused}
+              onLayout={this.handleVideoLayout}
+              onLoad={this.handleLoad}
+              onProgress={this.handleProgress}
+              onEnd={this.handleEnd}
+              ref={ref => (this.player = ref)}
+            />
             <View style={styles.videoCover}>
               {error && (
                 <Icon name="exclamation-triangle" size={30} color="red" />
