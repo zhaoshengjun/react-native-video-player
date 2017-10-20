@@ -75,12 +75,13 @@ export default class App extends Component {
       <View style={styles.container}>
         <View style={error ? sytles.error : undefined}>
           <Video
-            style={{ width: "100%", height }}
+            style={StyleSheet.absoluteFill}
             source={{ uri: "http://google.com/notavideo" }}
             resizeMode="contain"
             onError={this.handleError}
             onLoadStart={this.handleLoadStart}
             onBuffer={this.handleBuffer}
+            repeat
           />
           <View style={styles.videoCover}>
             {error && (
@@ -93,6 +94,15 @@ export default class App extends Component {
               </Animated.View>
             )}
           </View>
+          <View>
+            <Text style={styles.header}>Login</Text>
+            <TextInput placeholder="Email" style={styles.input} />
+            <TextInput
+              placeholder="Password"
+              secureTextEntry
+              style={styles.input}
+            />
+          </View>
         </View>
       </View>
     );
@@ -103,6 +113,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 250
+  },
+  header: {
+    fontSize: 30,
+    backgroundColor: "transparent",
+    color: "#FFF"
+  },
+  input: {
+    width: 300,
+    height: 50,
+    backgroundColor: "#FFF",
+    marginVertical: 15,
+    paddingLeft: 15
   },
   videoCover: {
     alignItem: "center",
