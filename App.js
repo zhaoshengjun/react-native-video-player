@@ -6,19 +6,27 @@ import {
   Animated,
   AppRegistry,
   ScrollView,
+  TouchableWithoutFeedback,
   Dimensions,
   TextInput
 } from "react-native";
+import ProgressBar from "react-native-progress/Bar";
 import Video from "react-native-video";
 import TestVideo from "./video.mp4";
 // const RemoteVedio = {uri:'https://viemo.com/assets/xxx.mp4'}
 import Icon from "react-native-vector-icons/FontAwesome";
 
 const THRESHOLD = 100; // when the video container is passing 100 pixel, the video will start to play. vise versa.
+const PROGRESSBARLENGTH = 250; // length of progress bar
+const secondsToTime = time => {
+  return ~~(time / 60) + ":" + (time % 60 < 10 ? "0" : "") + time % 60;
+};
 export default class App extends Component {
   state = {
     error: false,
     paused: true,
+    progress: 0,
+    duration: 0,
     buffering: true,
     animated: new Animated.Value(0)
   };
@@ -86,6 +94,41 @@ export default class App extends Component {
       evt.nativeEvent.layout.y + evt.nativeEvent.layout.height - THRESHOLD;
   };
 
+  handleLoad = meta => {
+    this.setState({
+      duration: meta.duration
+    });
+  };
+
+  handleEnd = () => {
+    this.setState({
+      paused: true
+    });
+  };
+
+  handleProgress = progress => {
+    this.setState({
+      progress: progress.currentTime / this.state.duration
+    });
+  };
+
+  handleProgressPress = evt => {
+    const position = e.nativeEvent.locationX;
+    const progress = position / PROGRESSBARLENGTH * this.state.duration;
+    this.player.seek(progress);
+  };
+
+  handleMainButtonTouch = () => {
+    if (this.state.progress >= 1) {
+      this.player.seek(0);
+    }
+    this.setState(state => {
+      return {
+        paused: !state.paused
+      };
+    });
+  };
+
   render() {
     const { width } = Dimensions.get("window");
     const height = width * 0.5625;
@@ -113,6 +156,10 @@ export default class App extends Component {
               repeat
               paused={this.state.paused}
               onLayout={this.handleVideoLayout}
+              onLoad={this.handleLoad}
+              onProgress={this.handleProgress}
+              onEnd={this.handleEnd}
+              ref={ref => (this.player = ref)}
             />
             <View style={styles.videoCover}>
               {error && (
@@ -133,6 +180,32 @@ export default class App extends Component {
                 secureTextEntry
                 style={styles.input}
               />
+            </View>
+            <View style={styles.controls}>
+              <TouchableWithoutFeedback onPress={this.handleMainButtonTouch}>
+                <Icon
+                  name={!this.state.paused ? "pause" : "play"}
+                  size={30}
+                  color="#FFF"
+                />
+              </TouchableWithoutFeedback>
+              <TouchableWithoutFeedback onPress={this.handleProgressPress}>
+                <View>
+                  <ProgressBar
+                    progress={this.state.progress}
+                    color="#FFF"
+                    unfilledColor="rgba(255,255,255,.5)"
+                    borderColor="#FFF"
+                    width={PROGRESSBARLENGTH}
+                    height={20}
+                  />
+                </View>
+              </TouchableWithoutFeedback>
+              <Text style={styles.duration}>
+                {secondsToTime(
+                  Math.floor(this.state.progress * this.state.duration)
+                )}
+              </Text>
             </View>
           </View>
           <View style={styles.fakeContent} />
@@ -159,8 +232,23 @@ const styles = StyleSheet.create({
     marginVertical: 15,
     paddingLeft: 15
   },
+  controls: {
+    backgroundColor: "rgba(0,0,0,0.5",
+    height: 48,
+    left: 0,
+    bottom: 0,
+    right: 0,
+    position: "absolute",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    paddingHorizontal: 10
+  },
+  mainButton: {
+    marginRight: 15
+  },
   videoCover: {
-    alignItem: "center",
+    alignItems: "center",
     justifyContent: "center",
     position: "absolute",
     left: 0,
